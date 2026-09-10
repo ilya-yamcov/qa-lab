@@ -124,8 +124,8 @@ nano .env
 | Elasticsearch | `9200` | `http://localhost:9200` |
 | Kafka UI | `8081` | `http://localhost:8081` |
 | Adminer | `8082` | `http://localhost:8082` |
-| PostgreSQL | `5432` | `localhost:5432` |
-| Kafka | `29092` | `localhost:29092` |
+| PostgreSQL | `5432` | `http://localhost:5432` |
+| Kafka | `29092` | `http://localhost:29092` |
 
 ---
 
