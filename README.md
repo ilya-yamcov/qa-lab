@@ -1,77 +1,215 @@
-# QA Lab
+# 🧪 QA Lab
 
-Учебный стенд для практики Manual QA.
+Учебный стенд для практики **Manual QA**.
 
-## Компоненты
+Стенд позволяет работать с API, базой данных, Kafka, логами и мониторингом в окружении, приближенном к реальному проекту.
 
-- Demo API / Swagger
-- PostgreSQL
-- Adminer
-- Kafka
-- Kafka UI
-- Prometheus
-- Grafana
-- Elasticsearch
-- Kibana
-- Fluent Bit
+---
 
-## Зависимости
+## 📦 Компоненты
+
+| Компонент | Назначение |
+|---|---|
+| **Demo API / Swagger** | REST API для тестирования |
+| **PostgreSQL** | База данных |
+| **Adminer** | Веб-интерфейс для работы с PostgreSQL |
+| **Kafka** | Брокер сообщений |
+| **Kafka UI** | Веб-интерфейс Kafka |
+| **Prometheus** | Сбор метрик |
+| **Grafana** | Визуализация метрик |
+| **Elasticsearch** | Хранение и поиск логов |
+| **Kibana** | Просмотр и анализ логов |
+| **Fluent Bit** | Сбор и отправка логов |
+
+---
+
+## ⚙️ Системные требования
+
+Минимальные:
 
 - Linux
 - Docker
 - Docker Compose Plugin
 - 4+ CPU
 - 12+ GB RAM
-- 80+ GB disk
+- 80+ GB свободного места
 
-Рекомендованные:
+### Рекомендуемые
 
-- 6 CPU
-- 16 GB RAM
-- 100+ GB SSD
+- **6 CPU**
+- **16 GB RAM**
+- **100+ GB SSD**
 
-## Первый старт
+---
 
-Клонируем репозиторий:
+# 🚀 Первый запуск
+
+## 1. Клонировать репозиторий
 
 ```bash
-git clone <repository>
+git clone https://github.com/ilya-yamcov/qa-lab.git
 cd qa-lab
 ```
-Создать конфигурацию:
 
+## 2. Создать конфигурацию
+
+Создать `.env` из шаблона:
+
+```bash
 cp .env.example .env
+```
+
+При необходимости отредактировать файл:
+
+```bash
 nano .env
+```
 
-###Start:
+> Файл `.env` содержит параметры окружения стенда и не должен попадать в Git.
 
+## 3. Запустить стенд
+
+```bash
 ./scripts/start.sh
+```
 
-###Status:
+После запуска Docker поднимет все необходимые сервисы.
 
+---
+
+# 🛠 Управление стендом
+
+### ▶️ Запуск
+
+```bash
+./scripts/start.sh
+```
+
+### 🔍 Проверка состояния
+
+```bash
 ./scripts/status.sh
+```
 
-###Logs:
+### 📜 Просмотр логов
 
+```bash
 ./scripts/logs.sh
+```
 
-###Stop:
+### ⏹ Остановка
 
+```bash
 ./scripts/stop.sh
+```
 
-###Complete reset:
+### ♻️ Полный сброс
 
+```bash
 ./scripts/reset.sh
+```
 
-##Порты
-Service	        Port
-Demo API	8000
-Grafana	        3000
-Prometheus	9090
-Kibana	        5601
-Elasticsearch	9200
-Kafka UI	8081
-Adminer	        8082
-PostgreSQL	5432
-Kafka	        29092
+> ⚠️ **Внимание:** полный сброс может удалить созданные контейнеры, данные и volumes стенда.
 
+---
+
+# 🌐 Сервисы и порты
+
+| Сервис | Порт | Адрес |
+|---|---:|---|
+| Demo API / Swagger | `8000` | `http://localhost:8000` |
+| Grafana | `3000` | `http://localhost:3000` |
+| Prometheus | `9090` | `http://localhost:9090` |
+| Kibana | `5601` | `http://localhost:5601` |
+| Elasticsearch | `9200` | `http://localhost:9200` |
+| Kafka UI | `8081` | `http://localhost:8081` |
+| Adminer | `8082` | `http://localhost:8082` |
+| PostgreSQL | `5432` | `localhost:5432` |
+| Kafka | `29092` | `localhost:29092` |
+
+---
+
+# 🧭 Быстрая проверка
+
+После запуска проверь состояние контейнеров:
+
+```bash
+./scripts/status.sh
+```
+
+Затем открой в браузере:
+
+- **Demo API / Swagger:** http://localhost:8000
+- **Kafka UI:** http://localhost:8081
+- **Adminer:** http://localhost:8082
+- **Grafana:** http://localhost:3000
+- **Prometheus:** http://localhost:9090
+- **Kibana:** http://localhost:5601
+
+---
+
+# 🏗 Архитектура стенда
+
+```text
+                    ┌───────────────┐
+                    │   Manual QA   │
+                    └───────┬───────┘
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+             ▼              ▼              ▼
+        ┌─────────┐    ┌──────────┐   ┌──────────┐
+        │Demo API │    │  Kafka   │   │PostgreSQL│
+        └────┬────┘    └────┬─────┘   └────┬─────┘
+             │              │              │
+             │         ┌────▼─────┐   ┌────▼─────┐
+             │         │ Kafka UI │   │  Adminer │
+             │         └──────────┘   └──────────┘
+             │
+       ┌─────▼──────┐
+       │ Fluent Bit │
+       └─────┬──────┘
+             ▼
+      ┌───────────────┐
+      │ Elasticsearch │
+      └───────┬───────┘
+              ▼
+          ┌────────┐
+          │ Kibana │
+          └────────┘
+
+       ┌────────────┐
+       │ Prometheus │
+       └─────┬──────┘
+             ▼
+         ┌─────────┐
+         │ Grafana │
+         └─────────┘
+```
+
+---
+
+## 📚 Что можно практиковать
+
+На стенде можно отрабатывать:
+
+- тестирование REST API;
+- работу со Swagger / OpenAPI;
+- отправку запросов через Postman;
+- проверку данных в PostgreSQL;
+- SQL-запросы;
+- работу с Kafka;
+- проверку сообщений в Kafka UI;
+- анализ логов через Kibana;
+- работу с Elasticsearch;
+- анализ метрик в Prometheus;
+- мониторинг через Grafana;
+- поиск причин ошибок между несколькими сервисами.
+
+---
+
+## 🧪 QA Lab
+
+Стенд предназначен для обучения и экспериментов.
+
+Его можно свободно останавливать, перезапускать и сбрасывать во время практики.
