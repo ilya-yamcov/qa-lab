@@ -37,7 +37,7 @@
 ```bash
 git clone <repository>
 cd qa-lab
-
+```
 Создать конфигурацию:
 
 cp .env.example .env
@@ -74,5 +74,4 @@ Kafka UI	8081
 Adminer	        8082
 PostgreSQL	5432
 Kafka	        29092
-```
 
