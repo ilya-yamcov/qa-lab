@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -120,7 +120,9 @@ else {
 Write-Host ""
 Write-Host "[7/7] Checking free disk space..."
 
-$drive = Get-PSDrive -Name C
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+$drive = (Get-Item $ProjectRoot).PSDrive
+Write-Host "Project drive: $($drive.Name):. Also check Docker Desktop disk image location and its free space."
 $freeGB = [math]::Round($drive.Free / 1GB, 1)
 
 if ($freeGB -ge 40) {
@@ -150,3 +152,4 @@ else {
 }
 
 Write-Host "========================================"
+

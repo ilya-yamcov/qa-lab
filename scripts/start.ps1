@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
@@ -24,7 +24,7 @@ try {
     wsl -d docker-desktop -u root `
         sysctl -w vm.max_map_count=1048576 *> $null
 
-    Write-Host "[OK] vm.max_map_count configured" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) { throw "sysctl failed" }; Write-Host "[OK] vm.max_map_count configured" -ForegroundColor Green
 }
 catch {
     Write-Host "[WARNING] Could not automatically set vm.max_map_count" -ForegroundColor Yellow
@@ -68,6 +68,8 @@ for ($i = 1; $i -le 20; $i++) {
 }
 
 Write-Host ""
+if (!$ApiReady) { throw "API did not become ready. Check docker compose logs demo-api." }
+& "$PSScriptRoot\init-observability.ps1"
 Write-Host "[4/4] Status:"
 docker compose ps
 
@@ -98,3 +100,4 @@ Write-Host "Login:       qaengineer"
 Write-Host "Password:    123qa"
 Write-Host ""
 Write-Host "========================================"
+

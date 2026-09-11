@@ -1,3 +1,5 @@
+﻿param([switch]$CheckServices)
+Set-Location (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = "Continue"
 
 Write-Host ""
@@ -71,3 +73,5 @@ Write-Host ""
 Write-Host "========================================"
 Write-Host "Doctor finished"
 Write-Host "========================================"
+
+if ($CheckServices) { & "$PSScriptRoot\init-observability.ps1" -CheckOnly -TimeoutSeconds 15 }
