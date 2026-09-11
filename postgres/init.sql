@@ -18,3 +18,24 @@ VALUES
     ('ilya', 'ilya.yamcov@gmail.com'),
     ('daniil', 'den@yandex.ru'),
     ('oleg', 'lusiy@mail.ru');
+
+CREATE TABLE IF NOT EXISTS profiles (
+    id SERIAL PRIMARY KEY,
+
+    owner_email VARCHAR(255) NOT NULL,
+
+    name VARCHAR(150) NOT NULL,
+
+    email VARCHAR(255) NOT NULL,
+
+    phone VARCHAR(100),
+
+    website VARCHAR(255),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_profiles_owner_email
+        UNIQUE (owner_email, email)
+);
