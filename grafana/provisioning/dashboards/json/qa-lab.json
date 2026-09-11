@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "query": "prometheus",
+        "type": "datasource",
+        "current": {
+          "value": "Prometheus",
+          "text": "Prometheus"
+        },
+        "hide": 0,
+        "name": "prometheus"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"demo-api\"}",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "API available",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    },
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"demo-api\",path!=\"/metrics\"}[1m]))",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 2,
+      "gridPos": {
+        "x": 12,
+        "y": 0.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "Requests / second",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    },
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total{job=\"demo-api\",status=~\"[45]..\"}[1m]))",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 3,
+      "gridPos": {
+        "x": 0,
+        "y": 8.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "HTTP errors / second",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    },
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"demo-api\",path!=\"/metrics\"}[1m])))",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 8.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "Request latency p95",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    },
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "orders_created_total{job=\"demo-api\"}",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 5,
+      "gridPos": {
+        "x": 0,
+        "y": 16.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "Orders created (since API restart)",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    },
+    {
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "{__name__=~\"profiles_(created|updated|deleted)_total\",job=\"demo-api\"}",
+          "legendFormat": "{{__name__}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "id": 6,
+      "gridPos": {
+        "x": 12,
+        "y": 16.0,
+        "w": 12,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "Profile operations (since API restart)",
+      "datasource": {
+        "uid": "${prometheus}",
+        "type": "prometheus"
+      }
+    }
+  ],
+  "title": "QA Lab Overview",
+  "uid": "qa-lab-overview",
+  "tags": [
+    "qa-lab"
+  ],
+  "refresh": "5s"
+}

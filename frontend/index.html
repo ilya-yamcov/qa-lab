@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow — Мои профили</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f4f6f9;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+        
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .auth-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .auth-card {
+            background: white;
+            padding: 48px 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .auth-card .logo {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        
+        .auth-card .logo span {
+            color: #4f46e5;
+        }
+        
+        .auth-card .subtitle {
+            text-align: center;
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+        
+        .auth-card .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .auth-card .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+        
+        .auth-card .form-group label .hint {
+            font-weight: 400;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        
+        .auth-card .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .auth-card .form-group input:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .auth-card .form-group input.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .auth-card .form-group input.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .auth-card .form-group .error-text {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .auth-card .form-group .error-text.visible {
+            display: block;
+        }
+        
+        .auth-card .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .auth-card .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .auth-card .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+        }
+        
+        .auth-card .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .auth-card .auth-error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #fecaca;
+        }
+        
+        .auth-card .auth-error.visible {
+            display: block;
+        }
+        
+        .auth-card .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .auth-card .auth-switch a {
+            color: #4f46e5;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        
+        .auth-card .auth-switch a:hover {
+            text-decoration: underline;
+        }
+        
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e8ecf1;
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4f46e5;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .navbar .logo span {
+            color: #1a1a2e;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            list-style: none;
+            align-items: center;
+        }
+        
+        .nav-links button {
+            background: none;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .nav-links button:hover {
+            background: #f1f5f9;
+            color: #1a1a2e;
+        }
+        
+        .nav-links button.active {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+        
+        .nav-links button .count {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 11px;
+            padding: 1px 8px;
+            border-radius: 12px;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+        
+        .nav-links button.active .count {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .user-menu .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .user-menu .user-info .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #4f46e5;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .user-menu .user-info .name {
+            font-weight: 500;
+            color: #1a1a2e;
+        }
+        
+        .user-menu .user-info .email {
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .btn-logout {
+            padding: 6px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: transparent;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+        }
+        
+        .btn-logout:hover {
+            background: #f1f5f9;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        
+        .page {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .page-header p {
+            color: #64748b;
+            font-size: 15px;
+            margin-top: 4px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #e8ecf1;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+        }
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        
+        .btn-sm {
+            padding: 5px 14px;
+            font-size: 12px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a2e;
+            margin-bottom: 5px;
+        }
+        
+        .form-group label .required {
+            color: #ef4444;
+        }
+        
+        .form-group label .hint {
+            font-weight: 400;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+            font-family: inherit;
+            background: white;
+        }
+        
+        .form-group input:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .form-group input.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .form-group input.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .form-group .error-text {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .form-group .error-text.visible {
+            display: block;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .table-wrap {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        table tr:hover td {
+            background: #fafafa;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .table-actions .btn {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+        
+        .result-block {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            border-left: 3px solid #94a3b8;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .result-block.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .result-block.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .result-block.loading {
+            border-left-color: #4f46e5;
+            background: #eef2ff;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1a1a2e;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 999;
+            max-width: 400px;
+        }
+        
+        .toast.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: #dc2626;
+        }
+        
+        .toast.success {
+            background: #059669;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        
+        .modal-overlay.visible {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal h2 {
+            margin-bottom: 16px;
+            font-size: 22px;
+        }
+        
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #94a3b8;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4f46e5;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .profile-header .info h2 {
+            font-size: 22px;
+        }
+        
+        .profile-header .info p {
+            color: #64748b;
+        }
+        
+        .profile-header .info .status {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 16px;
+                height: auto;
+                min-height: 56px;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+            .navbar .logo {
+                font-size: 17px;
+            }
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .nav-links button {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            .container {
+                padding: 16px 12px;
+            }
+            .page-header h1 {
+                font-size: 22px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .user-menu .user-info .email {
+                display: none;
+            }
+            .auth-card {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            .toast {
+                bottom: 16px;
+                right: 16px;
+                left: 16px;
+                max-width: none;
+                padding: 14px 18px;
+                font-size: 13px;
+            }
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-links button {
+                font-size: 12px;
+                padding: 5px 10px;
+            }
+            .page-header h1 {
+                font-size: 19px;
+            }
+            table {
+                font-size: 13px;
+            }
+            table th,
+            table td {
+                padding: 8px 10px;
+            }
+            .user-menu .user-info .name {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== ЭКРАН АВТОРИЗАЦИИ ===== -->
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+        <div class="logo">Task<span>Flow</span></div>
+        <div class="subtitle" id="authSubtitle">Войдите в свою рабочую среду</div>
+
+        <div class="auth-error" id="authError">Неверный логин или пароль</div>
+
+        <form id="authForm">
+            <div class="form-group">
+                <label for="authLogin">Логин</label>
+                <input
+                    type="text"
+                    id="authLogin"
+                    placeholder="Логин"
+                    value="qaengineer"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="authPassword">Пароль</label>
+                <input
+                    type="password"
+                    id="authPassword"
+                    placeholder="Пароль"
+                    value="123qa"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="authBtn">
+                Войти
+            </button>
+        </form>
+
+        <div class="auth-switch">
+            Учебный аккаунт:
+            <strong>qaengineer / 123qa</strong>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ОСНОВНОЙ ИНТЕРФЕЙС ===== -->
+<div id="appContent" style="display:none;">
+
+    <header class="navbar">
+        <div class="logo"><span>📋</span> Task<span>Flow</span></div>
+        <ul class="nav-links">
+            <li><button class="active" data-page="dashboard">Обзор</button></li>
+            <li><button data-page="users">Мои профили <span class="count" id="userCount">0</span></button></li>
+            <li><button data-page="create">Создать</button></li>
+            <li><button data-page="profile">Мой профиль</button></li>
+        </ul>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">А</div>
+                <div>
+                    <div class="name" id="userName">Пользователь</div>
+                    <div class="email" id="userEmail">user@example.com</div>
+                </div>
+            </div>
+            <button class="btn-logout" id="logoutBtn">Выйти</button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- ===== ОБЗОР ===== -->
+        <section class="page active" id="page-dashboard">
+            <div class="page-header">
+                <div>
+                    <h1>Обзор</h1>
+                    <p>Ваши персональные данные</p>
+                </div>
+                <button class="btn btn-primary" id="refreshDashboard">🔄 Обновить</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+                <div class="card" style="text-align:center; padding:20px;">
+                    <div style="font-size:32px; color:#4f46e5;">👥</div>
+                    <div style="font-size:24px; font-weight:700; margin-top:4px;" id="statUsers">0</div>
+                    <div style="color:#64748b; font-size:14px;">Моих профилей</div>
+                </div>
+                <div class="card" style="text-align:center; padding:20px;">
+                    <div style="font-size:32px; color:#10b981;">📝</div>
+                    <div style="font-size:24px; font-weight:700; margin-top:4px;" id="statPosts">0</div>
+                    <div style="color:#64748b; font-size:14px;">Записей</div>
+                </div>
+                <div class="card" style="text-align:center; padding:20px;">
+                    <div style="font-size:32px; color:#f59e0b;">📊</div>
+                    <div style="font-size:24px; font-weight:700; margin-top:4px;" id="statTodos">0</div>
+                    <div style="color:#64748b; font-size:14px;">Задач</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:12px;">Мои последние профили</h3>
+                <div id="dashboardUsers" style="font-size:14px; color:#64748b;">Загрузка...</div>
+            </div>
+
+            <div id="dashboardResult" class="result-block">Данные загружаются...</div>
+        </section>
+
+        <!-- ===== МОИ ПРОФИЛИ ===== -->
+        <section class="page" id="page-users">
+            <div class="page-header">
+                <div>
+                    <h1>Мои профили</h1>
+                    <p>Список профилей, созданных вами</p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="loadUsersBtn">📥 Загрузить</button>
+                    <button class="btn btn-outline" id="clearUsersBtn">Очистить</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <div id="usersTableContainer">
+                        <div class="empty-state">
+                            <div class="icon">👤</div>
+                            <h3>Нет профилей</h3>
+                            <p>Создайте свой первый профиль</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="usersResult" class="result-block">Готов к загрузке</div>
+        </section>
+
+        <!-- ===== СОЗДАТЬ ===== -->
+        <section class="page" id="page-create">
+            <div class="page-header">
+                <div>
+                    <h1>Создать профиль</h1>
+                    <p>Заполните форму для создания нового профиля</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <form id="createUserForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Имя <span class="required">*</span></label>
+                            <input type="text" id="createName" placeholder="Иван Иванов">
+                            <div class="error-text" id="createNameError">Обязательное поле</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email <span class="required">*</span> <span class="hint">(6-50 символов)</span></label>
+                            <input type="email" id="createEmail" placeholder="ivan@example.com">
+                            <div class="error-text" id="createEmailError">Email должен содержать от 6 до 50 символов</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="text" id="createPhone" placeholder="+7 999 123-45-67">
+                        </div>
+                        <div class="form-group">
+                            <label>Сайт</label>
+                            <input type="text" id="createWebsite" placeholder="example.com">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+                        <button type="submit" class="btn btn-success">✅ Сохранить</button>
+                        <button type="reset" class="btn btn-outline">Очистить</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="createResult" class="result-block">Заполните форму и нажмите «Сохранить»</div>
+        </section>
+
+        <!-- ===== МОЙ ПРОФИЛЬ ===== -->
+        <section class="page" id="page-profile">
+            <div class="page-header">
+                <div>
+                    <h1>Мой профиль</h1>
+                    <p>Редактирование личных данных</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">А</div>
+                    <div class="info">
+                        <h2 id="profileName">Пользователь</h2>
+                        <p id="profileEmail">user@example.com</p>
+                        <span class="status">✅ Активен</span>
+                    </div>
+                </div>
+
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label>Имя <span class="required">*</span></label>
+                        <input type="text" id="profileEditName" placeholder="Ваше имя">
+                        <div class="error-text" id="profileNameError">Обязательное поле</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span> <span class="hint">(6-50 символов)</span></label>
+                        <input type="email" id="profileEditEmail" placeholder="user@example.com">
+                        <div class="error-text" id="profileEmailError">Email должен содержать от 6 до 50 символов</div>
+                    </div>
+                    
+                    <div style="border-top: 2px dashed #e2e8f0; padding-top: 20px; margin-top: 10px;">
+                        <h3 style="font-size:16px; margin-bottom:12px;">🔑 Смена пароля</h3>
+                        <p style="font-size:13px; color:#64748b; margin-bottom:12px;">Оставьте поля пустыми, если не хотите менять пароль</p>
+                        
+                        <div class="form-group">
+                            <label>Новый пароль <span class="hint">(6-50 символов)</span></label>
+                            <input type="password" id="profileNewPassword" placeholder="Введите новый пароль">
+                            <div class="error-text" id="profilePasswordError">Пароль должен содержать от 6 до 50 символов</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Подтверждение пароля</label>
+                            <input type="password" id="profileConfirmPassword" placeholder="Повторите пароль">
+                            <div class="error-text" id="profileConfirmError">Пароли не совпадают</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                        <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
+                        <button type="reset" class="btn btn-outline">↺ Отмена</button>
+                    </div>
+                </form>
+
+                <div id="profileResult" class="result-block">Нажмите «Сохранить изменения», чтобы обновить профиль</div>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- ===== МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ПРОФИЛЕЙ ===== -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>✏️ Редактировать профиль</h2>
+        <form id="editForm">
+            <div class="form-group">
+                <label>Имя <span class="required">*</span></label>
+                <input type="text" id="editName" placeholder="Имя">
+                <div class="error-text" id="editNameError">Обязательное поле</div>
+            </div>
+            <div class="form-group">
+                <label>Email <span class="required">*</span> <span class="hint">(6-50 символов)</span></label>
+                <input type="email" id="editEmail" placeholder="email@example.com">
+                <div class="error-text" id="editEmailError">Email должен содержать от 6 до 50 символов</div>
+            </div>
+            <div class="form-group">
+                <label>Телефон</label>
+                <input type="text" id="editPhone" placeholder="+7 999 123-45-67">
+            </div>
+            <div class="form-group">
+                <label>Сайт</label>
+                <input type="text" id="editWebsite" placeholder="example.com">
+            </div>
+            <input type="hidden" id="editId">
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                <button type="button" class="btn btn-outline" id="closeModalBtn">Отмена</button>
+            </div>
+        </form>
+        <div id="editResult" class="result-block" style="margin-top:12px;"></div>
+    </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ================================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ================================================================ -->
+<script>
+    // ================================================================
+    // 1. СОСТОЯНИЕ
+    // ================================================================
+    let currentUser = null;
+    let myProfiles = [];
+    let editingId = null;
+
+    const API_URL = '/api';
+
+    const LAB_LOGIN = 'qaengineer';
+    const LAB_PASSWORD = '123qa';
+    const LAB_EMAIL = 'qaengineer@qa.local';
+    const LAB_NAME = 'QA Engineer';
+    // ================================================================
+    // 2. ВАЛИДАЦИЯ
+    // ================================================================
+    function isValidLength(value, min, max) {
+        return value && value.length >= min && value.length <= max;
+    }
+
+    function validateEmail(email) {
+        return isValidLength(email, 6, 50) && email.includes('@');
+    }
+
+    function validatePassword(password) {
+        return isValidLength(password, 6, 50);
+    }
+
+    // ================================================================
+    // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // ================================================================
+    function showToast(message, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast' + (type ? ' ' + type : '');
+        toast.classList.add('visible');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+            toast.classList.remove('visible');
+        }, 3500);
+    }
+
+    function setResult(id, html, type = '') {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = html;
+            el.className = 'result-block' + (type ? ' ' + type : '');
+        }
+    }
+
+    function log(message) {
+        const time = new Date().toLocaleTimeString();
+        console.log(`[${time}] ${message}`);
+    }
+
+    function getCurrentUser() {
+        return currentUser;
+    }
+
+    // ================================================================
+    // 4. РАБОТА С СЕССИЕЙ
+    // ================================================================
+    function saveSession(user) {
+        try {
+            localStorage.setItem('taskflow_session', JSON.stringify(user));
+            log('Сессия сохранена');
+        } catch (e) {
+            log('Ошибка сохранения сессии: ' + e.message);
+        }
+    }
+
+    function loadSession() {
+        try {
+            const data = localStorage.getItem('taskflow_session');
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            log('Ошибка загрузки сессии: ' + e.message);
+            return null;
+        }
+    }
+
+    function clearSession() {
+        localStorage.removeItem('taskflow_session');
+        log('Сессия очищена');
+    }
+
+    // ================================================================
+    // 5. РАБОТА С ХРАНИЛИЩЕМ (только для пользователей)
+    // ================================================================
+    function getUsersKey() {
+        return 'taskflow_users';
+    }
+
+    function loadUsers() {
+        try {
+            const data = localStorage.getItem(getUsersKey());
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem(getUsersKey(), JSON.stringify(users));
+    }
+
+    function findUser(email) {
+        const users = loadUsers();
+        return users.find(u => u.email === email);
+    }
+
+    // ================================================================
+    // 6. РАБОТА С БЕКЕНДОМ (API)
+    // ================================================================
+
+    // GET /profiles — получить все профили с сервера
+    async function fetchProfiles() {
+        try {
+            const user = getCurrentUser();
+            if (!user) {
+                log('❌ Пользователь не авторизован');
+                return [];
+            }
+
+            console.log(`📤 GET ${API_URL}/profiles`);
+            const response = await fetch(`${API_URL}/profiles`, {
+                headers: {
+                    'X-User-Email': user.email
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Профили загружены с сервера:', data);
+            return data;
+        } catch (error) {
+            console.error('❌ Ошибка загрузки профилей:', error);
+            return [];
+        }
+    }
+
+    // POST /profiles — создать профиль на сервере
+    async function createProfileOnServer(profileData) {
+        try {
+            const user = getCurrentUser();
+            if (!user) {
+                log('❌ Пользователь не авторизован');
+                return null;
+            }
+
+            console.log(`📤 POST ${API_URL}/profiles`, profileData);
+            const response = await fetch(`${API_URL}/profiles`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Email': user.email
+                },
+                body: JSON.stringify(profileData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Профиль создан на сервере:', data);
+            return data;
+        } catch (error) {
+            console.error('❌ Ошибка создания профиля:', error);
+            return null;
+        }
+    }
+
+    // DELETE /profiles/:id — удалить профиль на сервере
+    async function deleteProfileOnServer(id) {
+        try {
+            const user = getCurrentUser();
+            if (!user) {
+                log('❌ Пользователь не авторизован');
+                return false;
+            }
+
+            console.log(`📤 DELETE ${API_URL}/profiles/${id}`);
+            const response = await fetch(`${API_URL}/profiles/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-User-Email': user.email
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
+
+            console.log(`✅ Профиль ${id} удалён на сервере`);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка удаления профиля:', error);
+            return false;
+        }
+    }
+
+    // ================================================================
+    // 7. АВТОРИЗАЦИЯ
+    // ================================================================
+    function showAuthError(message) {
+        const el = document.getElementById('authError');
+        el.textContent = message;
+        el.classList.add('visible');
+    }
+
+    function hideAuthError() {
+        document.getElementById('authError').classList.remove('visible');
+    }
+
+    function validateAuthForm(email, password) {
+        let hasError = false;
+        
+        if (!validateEmail(email)) {
+            document.getElementById('authEmailError').classList.add('visible');
+            document.getElementById('authEmail').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('authEmailError').classList.remove('visible');
+            document.getElementById('authEmail').classList.remove('error');
+            document.getElementById('authEmail').classList.add('success');
+        }
+        
+        if (!validatePassword(password)) {
+            document.getElementById('authPasswordError').classList.add('visible');
+            document.getElementById('authPassword').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('authPasswordError').classList.remove('visible');
+            document.getElementById('authPassword').classList.remove('error');
+            document.getElementById('authPassword').classList.add('success');
+        }
+        
+        return !hasError;
+    }
+
+    document.getElementById('authForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const login = document.getElementById('authLogin').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const btn = document.getElementById('authBtn');
+
+        hideAuthError();
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Загрузка...';
+
+        setTimeout(() => {
+            try {
+                if (login !== LAB_LOGIN || password !== LAB_PASSWORD) {
+                    throw new Error('Неверный логин или пароль');
+                }
+
+                currentUser = {
+                    login: LAB_LOGIN,
+                    email: LAB_EMAIL,
+                    name: LAB_NAME
+                };
+
+                saveSession(currentUser);
+
+                document.getElementById('authOverlay').classList.add('hidden');
+                document.getElementById('appContent').style.display = 'block';
+
+                updateUserUI();
+                loadDashboard();
+                loadMyProfiles();
+
+                log(`Пользователь вошёл: ${LAB_LOGIN}`);
+                showToast(`Добро пожаловать, ${LAB_NAME}!`, 'success');
+
+            } catch (error) {
+                showAuthError(error.message);
+                log(`Ошибка авторизации: ${error.message}`);
+
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Войти';
+            }
+        }, 300);
+    });
+
+    // ================================================================
+    // 8. ВЫХОД
+    // ================================================================
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            currentUser = null;
+            clearSession();
+            document.getElementById('appContent').style.display = 'none';
+            document.getElementById('authOverlay').classList.remove('hidden');
+            document.getElementById('authForm').reset();
+            document.getElementById('authLogin').value = LAB_LOGIN;
+            document.getElementById('authPassword').value = LAB_PASSWORD;
+	    hideAuthError();
+            log('Пользователь вышел');
+            showToast('Вы вышли из системы');
+        }
+    });
+
+    // ================================================================
+    // 9. ОБНОВЛЕНИЕ UI
+    // ================================================================
+    function updateUserUI() {
+        if (!currentUser) return;
+        const name = currentUser.name || currentUser.email.split('@')[0];
+        const avatar = name.charAt(0).toUpperCase();
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userEmail').textContent = currentUser.email;
+        document.getElementById('userAvatar').textContent = avatar;
+        document.getElementById('profileName').textContent = name;
+        document.getElementById('profileEmail').textContent = currentUser.email;
+        document.getElementById('profileAvatar').textContent = avatar;
+        document.getElementById('profileEditName').value = name;
+        document.getElementById('profileEditEmail').value = currentUser.email;
+    }
+
+    // ================================================================
+    // 10. НАВИГАЦИЯ
+    // ================================================================
+    document.querySelectorAll('.nav-links button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const pageId = 'page-' + this.dataset.page;
+            document.getElementById(pageId).classList.add('active');
+        });
+    });
+
+    // ================================================================
+    // 11. ОБЗОР
+    // ================================================================
+    async function loadDashboard() {
+        if (!currentUser) return;
+        
+        // Загружаем с сервера
+        const profiles = await fetchProfiles();
+        const count = profiles.length;
+        
+        document.getElementById('statUsers').textContent = count;
+        document.getElementById('statPosts').textContent = count;
+        document.getElementById('statTodos').textContent = count;
+        document.getElementById('userCount').textContent = count;
+
+        let html = '<ul style="list-style:none; padding:0;">';
+        if (profiles.length === 0) {
+            html += '<li style="padding:6px 0; color:#94a3b8;">У вас пока нет профилей</li>';
+        } else {
+            profiles.slice(0, 5).forEach(p => {
+                html += `<li style="padding:6px 0; border-bottom:1px solid #f1f5f9;">${p.name} — <span style="color:#64748b;">${p.email}</span></li>`;
+            });
+            if (profiles.length > 5) {
+                html += `<li style="padding:6px 0; color:#64748b;">...и ещё ${profiles.length - 5} профилей</li>`;
+            }
+        }
+        html += '</ul>';
+        document.getElementById('dashboardUsers').innerHTML = html;
+
+        setResult('dashboardResult', `✅ Всего профилей: ${count}`, 'success');
+        log(`Обзор обновлён: ${count} профилей`);
+    }
+
+    document.getElementById('refreshDashboard').addEventListener('click', loadDashboard);
+
+    // ================================================================
+    // 12. МОИ ПРОФИЛИ (ЗАГРУЗКА С СЕРВЕРА)
+    // ================================================================
+    async function loadMyProfiles() {
+        if (!currentUser) return;
+        
+        // ✅ Загружаем с сервера
+        const profiles = await fetchProfiles();
+        myProfiles = profiles;
+        renderProfilesTable();
+        document.getElementById('userCount').textContent = myProfiles.length;
+    }
+
+    function renderProfilesTable() {
+        const container = document.getElementById('usersTableContainer');
+        
+        if (myProfiles.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">👤</div>
+                    <h3>Нет профилей</h3>
+                    <p>Создайте свой первый профиль</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Имя</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Сайт</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        myProfiles.forEach(p => {
+            html += `
+                <tr>
+                    <td><strong>${p.id}</strong></td>
+                    <td>${p.name}</td>
+                    <td>${p.email}</td>
+                    <td>${p.phone || '—'}</td>
+                    <td>${p.website || '—'}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-primary btn-sm" onclick="openEditModal(${p.id})">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteProfile(${p.id})">🗑</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody></table>
+            <div style="margin-top:12px; font-size:13px; color:#94a3b8;">
+                Всего: ${myProfiles.length} профилей
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        setResult('usersResult', `✅ Загружено ${myProfiles.length} профилей с сервера`, 'success');
+    }
+
+    document.getElementById('loadUsersBtn').addEventListener('click', function() {
+        loadMyProfiles();
+        showToast(`Загружено ${myProfiles.length} профилей с сервера`, 'success');
+    });
+
+    // ================================================================
+    // 13. ОЧИСТКА (УДАЛЕНИЕ ВСЕХ ПРОФИЛЕЙ)
+    // ================================================================
+    document.getElementById('clearUsersBtn').addEventListener('click', async function() {
+        if (!confirm('Вы уверены, что хотите удалить все профили?')) return;
+        
+        let deletedCount = 0;
+        for (const profile of myProfiles) {
+            const success = await deleteProfileOnServer(profile.id);
+            if (success) deletedCount++;
+        }
+        
+        myProfiles = [];
+        renderProfilesTable();
+        document.getElementById('userCount').textContent = '0';
+        setResult('usersResult', `✅ Удалено ${deletedCount} профилей с сервера`, 'success');
+        showToast(`Удалено ${deletedCount} профилей`, '');
+        log('Профили очищены на сервере');
+        loadDashboard();
+    });
+
+    // ================================================================
+    // 14. СОЗДАНИЕ ПРОФИЛЯ (НА СЕРВЕРЕ)
+    // ================================================================
+    document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('createName').value.trim();
+        const email = document.getElementById('createEmail').value.trim();
+        const phone = document.getElementById('createPhone').value.trim();
+        const website = document.getElementById('createWebsite').value.trim();
+
+        let hasError = false;
+        if (!name) {
+            document.getElementById('createNameError').classList.add('visible');
+            document.getElementById('createName').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('createNameError').classList.remove('visible');
+            document.getElementById('createName').classList.remove('error');
+        }
+        
+        if (!validateEmail(email)) {
+            document.getElementById('createEmailError').classList.add('visible');
+            document.getElementById('createEmail').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('createEmailError').classList.remove('visible');
+            document.getElementById('createEmail').classList.remove('error');
+            document.getElementById('createEmail').classList.add('success');
+        }
+
+        if (hasError) {
+            setResult('createResult', '❌ Исправьте ошибки в форме', 'error');
+            showToast('Исправьте ошибки в форме', 'error');
+            return;
+        }
+
+        const newProfile = {
+            name: name,
+            email: email,
+            phone: phone || '—',
+            website: website || '—'
+        };
+
+        // ✅ Отправляем на сервер
+        const result = await createProfileOnServer(newProfile);
+        
+        if (result) {
+            setResult('createResult', 
+                `✅ Профиль создан на сервере!\nИмя: ${name}\nEmail: ${email}\nID: ${result.id}`,
+                'success'
+            );
+            showToast(`Профиль "${name}" создан на сервере`, 'success');
+            log(`Создан профиль на сервере: ${name}`);
+            
+            // Обновляем список
+            loadMyProfiles();
+            loadDashboard();
+            document.getElementById('createUserForm').reset();
+        } else {
+            setResult('createResult', '❌ Ошибка создания профиля на сервере', 'error');
+            showToast('Ошибка создания профиля', 'error');
+        }
+    });
+
+    // ================================================================
+    // 15. РЕДАКТИРОВАНИЕ ПРОФИЛЯ (модальное окно)
+    // ================================================================
+    window.openEditModal = function(id) {
+        const profile = myProfiles.find(p => p.id === id);
+        if (!profile) return;
+        
+        editingId = id;
+        document.getElementById('editId').value = id;
+        document.getElementById('editName').value = profile.name;
+        document.getElementById('editEmail').value = profile.email;
+        document.getElementById('editPhone').value = profile.phone || '';
+        document.getElementById('editWebsite').value = profile.website || '';
+        document.getElementById('editResult').innerHTML = '';
+        document.getElementById('editResult').className = 'result-block';
+        document.getElementById('editModal').classList.add('visible');
+    };
+
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+        document.getElementById('editModal').classList.remove('visible');
+    });
+
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('visible');
+        }
+    });
+
+    // ================================================================
+    // 16. ОБНОВЛЕНИЕ ПРОФИЛЯ НА СЕРВЕРЕ (PUT)
+    // ================================================================
+    document.getElementById('editForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const id = parseInt(document.getElementById('editId').value);
+        const name = document.getElementById('editName').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+        const phone = document.getElementById('editPhone').value.trim();
+        const website = document.getElementById('editWebsite').value.trim();
+
+        let hasError = false;
+        if (!name) {
+            document.getElementById('editNameError').classList.add('visible');
+            document.getElementById('editName').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('editNameError').classList.remove('visible');
+            document.getElementById('editName').classList.remove('error');
+        }
+        
+        if (!validateEmail(email)) {
+            document.getElementById('editEmailError').classList.add('visible');
+            document.getElementById('editEmail').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('editEmailError').classList.remove('visible');
+            document.getElementById('editEmail').classList.remove('error');
+            document.getElementById('editEmail').classList.add('success');
+        }
+
+        if (hasError) {
+            setResult('editResult', '❌ Исправьте ошибки в форме', 'error');
+            return;
+        }
+
+        try {
+            const user = getCurrentUser();
+            const updateData = { name, email, phone, website };
+            
+            console.log(`📤 PUT ${API_URL}/profiles/${id}`, updateData);
+            const response = await fetch(`${API_URL}/profiles/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Email': user.email
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Профиль обновлён на сервере:', data);
+            
+            setResult('editResult', '✅ Профиль обновлён на сервере!', 'success');
+            showToast('Профиль обновлён', 'success');
+            log(`Обновлён профиль ID ${id} на сервере`);
+            
+            // Обновляем список
+            await loadMyProfiles();
+            await loadDashboard();
+            
+            setTimeout(() => {
+                document.getElementById('editModal').classList.remove('visible');
+            }, 800);
+        } catch (error) {
+            console.error('❌ Ошибка обновления профиля:', error);
+            setResult('editResult', '❌ Ошибка обновления профиля', 'error');
+        }
+    });
+
+    // ================================================================
+    // 17. УДАЛЕНИЕ ПРОФИЛЯ (НА СЕРВЕРЕ)
+    // ================================================================
+    window.deleteProfile = async function(id) {
+        if (!confirm('Вы уверены, что хотите удалить этот профиль?')) return;
+        
+        const success = await deleteProfileOnServer(id);
+        if (success) {
+            myProfiles = myProfiles.filter(p => p.id !== id);
+            renderProfilesTable();
+            loadDashboard();
+            document.getElementById('userCount').textContent = myProfiles.length;
+            showToast('Профиль удалён с сервера', '');
+            log(`Удалён профиль ID ${id} с сервера`);
+        } else {
+            showToast('Ошибка удаления профиля', 'error');
+        }
+    };
+
+    // ================================================================
+    // 18. РЕДАКТИРОВАНИЕ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ
+    // ================================================================
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('profileEditName').value.trim();
+        const email = document.getElementById('profileEditEmail').value.trim();
+        const newPassword = document.getElementById('profileNewPassword').value.trim();
+        const confirmPassword = document.getElementById('profileConfirmPassword').value.trim();
+        
+        let hasError = false;
+        
+        if (!name) {
+            document.getElementById('profileNameError').classList.add('visible');
+            document.getElementById('profileEditName').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('profileNameError').classList.remove('visible');
+            document.getElementById('profileEditName').classList.remove('error');
+            document.getElementById('profileEditName').classList.add('success');
+        }
+        
+        if (!validateEmail(email)) {
+            document.getElementById('profileEmailError').classList.add('visible');
+            document.getElementById('profileEditEmail').classList.add('error');
+            hasError = true;
+        } else {
+            document.getElementById('profileEmailError').classList.remove('visible');
+            document.getElementById('profileEditEmail').classList.remove('error');
+            document.getElementById('profileEditEmail').classList.add('success');
+        }
+        
+        if (email !== currentUser.email) {
+            const users = loadUsers();
+            const existing = users.find(u => u.email === email);
+            if (existing) {
+                document.getElementById('profileEmailError').textContent = '❌ Этот email уже занят другим пользователем';
+                document.getElementById('profileEmailError').classList.add('visible');
+                document.getElementById('profileEditEmail').classList.add('error');
+                hasError = true;
+            } else {
+                document.getElementById('profileEmailError').textContent = 'Email должен содержать от 6 до 50 символов';
+            }
+        }
+        
+        if (newPassword || confirmPassword) {
+            if (!validatePassword(newPassword)) {
+                document.getElementById('profilePasswordError').classList.add('visible');
+                document.getElementById('profileNewPassword').classList.add('error');
+                hasError = true;
+            } else {
+                document.getElementById('profilePasswordError').classList.remove('visible');
+                document.getElementById('profileNewPassword').classList.remove('error');
+                document.getElementById('profileNewPassword').classList.add('success');
+            }
+            
+            if (newPassword !== confirmPassword) {
+                document.getElementById('profileConfirmError').classList.add('visible');
+                document.getElementById('profileConfirmPassword').classList.add('error');
+                hasError = true;
+            } else if (newPassword) {
+                document.getElementById('profileConfirmError').classList.remove('visible');
+                document.getElementById('profileConfirmPassword').classList.remove('error');
+                document.getElementById('profileConfirmPassword').classList.add('success');
+            }
+        } else {
+            document.getElementById('profilePasswordError').classList.remove('visible');
+            document.getElementById('profileNewPassword').classList.remove('error');
+            document.getElementById('profileConfirmError').classList.remove('visible');
+            document.getElementById('profileConfirmPassword').classList.remove('error');
+        }
+        
+        if (hasError) {
+            setResult('profileResult', '❌ Исправьте ошибки в форме', 'error');
+            showToast('Исправьте ошибки', 'error');
+            return;
+        }
+        
+        const users = loadUsers();
+        const userIndex = users.findIndex(u => u.email === currentUser.email);
+        
+        if (userIndex !== -1) {
+            users[userIndex].name = name;
+            users[userIndex].email = email;
+            if (newPassword) {
+                users[userIndex].password = newPassword;
+            }
+            saveUsers(users);
+            
+            const oldEmail = currentUser.email;
+            currentUser.name = name;
+            currentUser.email = email;
+            
+            saveSession(currentUser);
+            
+            updateUserUI();
+            loadDashboard();
+            loadMyProfiles();
+            
+            setResult('profileResult', 
+                `✅ Профиль обновлён!\nИмя: ${name}\nEmail: ${email}\n${newPassword ? '🔑 Пароль изменён' : ''}`,
+                'success'
+            );
+            showToast('Профиль обновлён!', 'success');
+            log(`Профиль обновлён: ${name}, ${email}`);
+            
+            document.getElementById('profileNewPassword').value = '';
+            document.getElementById('profileConfirmPassword').value = '';
+            document.getElementById('profileNewPassword').classList.remove('success');
+            document.getElementById('profileConfirmPassword').classList.remove('success');
+        }
+    });
+
+    // ================================================================
+    // 19. ВОССТАНОВЛЕНИЕ СЕССИИ
+    // ================================================================
+    function restoreSession() {
+        const session = loadSession();
+
+        if (
+            session &&
+            session.login === LAB_LOGIN
+        ) {
+            currentUser = session;
+
+            log(`Сессия восстановлена для: ${currentUser.login}`);
+
+            document.getElementById('authOverlay').classList.add('hidden');
+            document.getElementById('appContent').style.display = 'block';
+
+            updateUserUI();
+            loadDashboard();
+            loadMyProfiles();
+
+            showToast(`С возвращением, ${currentUser.name}!`, 'success');
+
+            return true;
+        }
+
+        clearSession();
+        return false;
+    }
+
+    // ================================================================
+    // 20. ТЕСТОВЫЙ ЗАПРОС В NETWORK
+    // ================================================================
+    function testNetworkRequest() {
+    log('📤 Проверяем соединение с QA Lab API...');
+
+    fetch(`${API_URL}/health`)
+        .then(response => {
+            log(`📥 Ответ API! Статус: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            log(`✅ QA Lab API доступен: ${JSON.stringify(data)}`);
+            console.log('📦 Health API:', data);
+        })
+        .catch(error => {
+            log(`❌ QA Lab API недоступен: ${error.message}`);
+        });
+}
+
+    // ================================================================
+    // 21. ЗАПУСК
+    // ================================================================
+
+    const sessionRestored = restoreSession();
+
+    if (!sessionRestored) {
+        document.getElementById('authOverlay').classList.remove('hidden');
+        document.getElementById('appContent').style.display = 'none';
+        log('Сессия не найдена — требуется вход');
+    }
+
+    log('🚀 TaskFlow загружен');
+    testNetworkRequest();
+    log(`📊 Пользователей в системе: ${loadUsers().length}`);
+    log('💡 Для входа: qaengineer / 123qa');
+    log('📝 Пароль должен быть от 6 до 50 символов');
+    log('📧 Email должен быть от 6 до 50 символов');
+    log('💾 Сессия сохраняется в localStorage');
+</script>
+
+</body>
+</html>

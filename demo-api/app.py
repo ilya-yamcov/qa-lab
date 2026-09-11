@@ -7,7 +7,7 @@ from decimal import Decimal
 import psycopg
 from psycopg.rows import dict_row
 from confluent_kafka import Producer
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header
 from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, generate_latest
 from starlette.responses import Response
@@ -60,11 +60,30 @@ REQUEST_DURATION = Histogram(
     ["method", "path"]
 )
 
+PROFILE_CREATED = Counter(
+    "profiles_created_total",
+    "Number of successfully created profiles"
+)
+
+PROFILE_UPDATED = Counter(
+    "profiles_updated_total",
+    "Number of successfully updated profiles"
+)
+
+PROFILE_DELETED = Counter(
+    "profiles_deleted_total",
+    "Number of successfully deleted profiles"
+)
 
 class OrderCreate(BaseModel):
     user_id: int
     amount: Decimal
 
+class ProfileData(BaseModel):
+    name: str
+    email: str
+    phone: str | None = None
+    website: str | None = None
 
 def log_event(level: str, event: str, **fields):
     payload = {
@@ -101,6 +120,27 @@ def get_connection():
         row_factory=dict_row
     )
 
+def publish_kafka_event(topic: str, event: dict, key: str | None = None):
+    try:
+        producer.produce(
+            topic,
+            key=key,
+            value=json.dumps(
+                event,
+                ensure_ascii=False,
+                default=str
+            )
+        )
+
+        producer.flush(2)
+
+    except Exception as error:
+        log_event(
+            "ERROR",
+            "kafka_publish_failed",
+            topic=topic,
+            error=str(error)
+        )
 
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
@@ -312,3 +352,263 @@ def metrics():
         content=generate_latest(),
         media_type="text/plain"
     )
+
+@app.get("/profiles")
+def get_profiles(
+    x_user_email: str = Header(..., alias="X-User-Email")
+):
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    email,
+                    phone,
+                    website,
+                    created_at,
+                    updated_at
+                FROM profiles
+                WHERE owner_email = %s
+                ORDER BY id
+                """,
+                (x_user_email,)
+            )
+
+            profiles = cursor.fetchall()
+
+    log_event(
+        "INFO",
+        "profiles_listed",
+        owner_email=x_user_email,
+        count=len(profiles)
+    )
+
+    return profiles
+
+@app.post("/profiles", status_code=201)
+def create_profile(
+    profile: ProfileData,
+    x_user_email: str = Header(..., alias="X-User-Email")
+):
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+
+                cursor.execute(
+                    """
+                    INSERT INTO profiles (
+                        owner_email,
+                        name,
+                        email,
+                        phone,
+                        website
+                    )
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING
+                        id,
+                        name,
+                        email,
+                        phone,
+                        website,
+                        created_at,
+                        updated_at
+                    """,
+                    (
+                        x_user_email,
+                        profile.name,
+                        profile.email,
+                        profile.phone,
+                        profile.website
+                    )
+                )
+
+                created = cursor.fetchone()
+
+            conn.commit()
+
+    except Exception as error:
+        log_event(
+            "ERROR",
+            "profile_create_failed",
+            owner_email=x_user_email,
+            email=profile.email,
+            error=str(error)
+        )
+
+        raise HTTPException(
+            status_code=409,
+            detail="Profile could not be created"
+        )
+
+    event = {
+        "event": "PROFILE_CREATED",
+        "profile_id": created["id"],
+        "owner_email": x_user_email,
+        "profile": created,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    publish_kafka_event(
+        "profiles-events",
+        event,
+        key=str(created["id"])
+    )
+
+    PROFILE_CREATED.inc()
+
+    log_event(
+        "INFO",
+        "profile_created",
+        profile_id=created["id"],
+        owner_email=x_user_email,
+        email=profile.email
+    )
+
+    return created
+
+@app.put("/profiles/{profile_id}")
+def update_profile(
+    profile_id: int,
+    profile: ProfileData,
+    x_user_email: str = Header(..., alias="X-User-Email")
+):
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+
+            cursor.execute(
+                """
+                UPDATE profiles
+                SET
+                    name = %s,
+                    email = %s,
+                    phone = %s,
+                    website = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                  AND owner_email = %s
+                RETURNING
+                    id,
+                    name,
+                    email,
+                    phone,
+                    website,
+                    created_at,
+                    updated_at
+                """,
+                (
+                    profile.name,
+                    profile.email,
+                    profile.phone,
+                    profile.website,
+                    profile_id,
+                    x_user_email
+                )
+            )
+
+            updated = cursor.fetchone()
+
+        conn.commit()
+
+    if not updated:
+        log_event(
+            "WARNING",
+            "profile_not_found",
+            profile_id=profile_id,
+            owner_email=x_user_email
+        )
+
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found"
+        )
+
+    publish_kafka_event(
+        "profiles-events",
+        {
+            "event": "PROFILE_UPDATED",
+            "profile_id": profile_id,
+            "owner_email": x_user_email,
+            "profile": updated,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        },
+        key=str(profile_id)
+    )
+
+    PROFILE_UPDATED.inc()
+
+    log_event(
+        "INFO",
+        "profile_updated",
+        profile_id=profile_id,
+        owner_email=x_user_email
+    )
+
+    return updated
+
+@app.delete("/profiles/{profile_id}")
+def delete_profile(
+    profile_id: int,
+    x_user_email: str = Header(..., alias="X-User-Email")
+):
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+
+            cursor.execute(
+                """
+                DELETE FROM profiles
+                WHERE id = %s
+                  AND owner_email = %s
+                RETURNING id, name, email
+                """,
+                (
+                    profile_id,
+                    x_user_email
+                )
+            )
+
+            deleted = cursor.fetchone()
+
+        conn.commit()
+
+    if not deleted:
+        log_event(
+            "WARNING",
+            "profile_delete_not_found",
+            profile_id=profile_id,
+            owner_email=x_user_email
+        )
+
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found"
+        )
+
+    publish_kafka_event(
+        "profiles-events",
+        {
+            "event": "PROFILE_DELETED",
+            "profile_id": profile_id,
+            "owner_email": x_user_email,
+            "profile": deleted,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        },
+        key=str(profile_id)
+    )
+
+    PROFILE_DELETED.inc()
+
+    log_event(
+        "INFO",
+        "profile_deleted",
+        profile_id=profile_id,
+        owner_email=x_user_email
+    )
+
+    return {
+        "status": "deleted",
+        "id": profile_id
+    }
+
+
